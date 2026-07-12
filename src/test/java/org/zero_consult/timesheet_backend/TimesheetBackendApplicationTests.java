@@ -1,4 +1,4 @@
-package org.zero_consult.people_backend;
+package org.zero_consult.timesheet_backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

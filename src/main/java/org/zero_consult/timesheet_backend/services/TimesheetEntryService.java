@@ -4,8 +4,6 @@ import org.springframework.stereotype.Controller;
 import org.zero_consult.idl.client.ApiException;
 import org.zero_consult.idl.client.api.CustomerApi;
 import org.zero_consult.idl.client.api.EmployeeApi;
-import org.zero_consult.idl.client.model.Customer;
-import org.zero_consult.idl.client.model.Employee;
 import org.zero_consult.timesheet_backend.entities.TimesheetEntry;
 import org.zero_consult.timesheet_backend.entities.TimesheetStatus;
 import org.zero_consult.timesheet_backend.exceptions.EntityNotFoundException;
@@ -54,20 +52,20 @@ public class TimesheetEntryService {
         timesheetEntry.setDate(entity.getDate());
         timesheetEntry.setStartTime(entity.getStartTime());
         timesheetEntry.setEndTime(entity.getEndTime());
-        switch(timesheetEntry.getStatus()) {
+        switch (timesheetEntry.getStatus()) {
             case ACCEPTED:
-                if(entity.getStatus().equals(TimesheetStatus.REJECTED)) {
+                if (entity.getStatus().equals(TimesheetStatus.REJECTED)) {
                     throw new InvalidTimesheetEntryStatusUpdateException("TimesheetEntry status cannot be updated to REJECTED");
                 }
-                if(entity.getStatus().equals(TimesheetStatus.IN_PROGRESS)) {
+                if (entity.getStatus().equals(TimesheetStatus.IN_PROGRESS)) {
                     throw new InvalidTimesheetEntryStatusUpdateException("TimesheetEntry status cannot be updated to IN_PROGRESS");
                 }
                 break;
             case REJECTED:
-                if(entity.getStatus().equals(TimesheetStatus.ACCEPTED)) {
+                if (entity.getStatus().equals(TimesheetStatus.ACCEPTED)) {
                     throw new InvalidTimesheetEntryStatusUpdateException("TimesheetEntry status cannot be updated to REJECTED");
                 }
-                if(entity.getStatus().equals(TimesheetStatus.IN_PROGRESS)) {
+                if (entity.getStatus().equals(TimesheetStatus.IN_PROGRESS)) {
                     throw new InvalidTimesheetEntryStatusUpdateException("TimesheetEntry status cannot be updated to IN_PROGRESS");
                 }
                 break;
