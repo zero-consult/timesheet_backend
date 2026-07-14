@@ -35,6 +35,9 @@ public class TimesheetEntryService {
         entity.setCreatedAt(java.time.LocalDateTime.now());
         entity.setStatus(TimesheetStatus.IN_PROGRESS);
         CustomerApi customerApi = new CustomerApi();
+        System.out.println("################################");
+        System.out.println("Customer API: " + customerProperties.getPeopleBackendHost());
+        System.out.println("################################");
         customerApi.setCustomBaseUrl(customerProperties.getPeopleBackendHost());
         try {
             customerApi.getCustomer(entity.getCustomerId());
