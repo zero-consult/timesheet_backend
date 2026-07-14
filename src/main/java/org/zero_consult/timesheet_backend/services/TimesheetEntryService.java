@@ -39,14 +39,14 @@ public class TimesheetEntryService {
         try {
             customerApi.getCustomer(entity.getCustomerId());
         } catch (ApiException e) {
-            throw new EntityNotFoundException("Customer not found");
+            throw new EntityNotFoundException("Customer not found", e);
         }
         EmployeeApi employeeApi = new EmployeeApi();
         employeeApi.setCustomBaseUrl(customerProperties.getPeopleBackendHost());
         try {
             employeeApi.getEmployee(entity.getEmployeeId());
         } catch (ApiException e) {
-            throw new EntityNotFoundException("Employee not found");
+            throw new EntityNotFoundException("Employee not found", e);
         }
         return timesheetEntryRepository.save(entity);
     }
@@ -74,14 +74,14 @@ public class TimesheetEntryService {
         try {
             customerApi.getCustomer(entity.getCustomerId());
         } catch (ApiException e) {
-            throw new EntityNotFoundException("Customer not found");
+            throw new EntityNotFoundException("Customer not found", e);
         }
         EmployeeApi employeeApi = new EmployeeApi();
         employeeApi.setCustomBaseUrl(customerProperties.getPeopleBackendHost());
         try {
             employeeApi.getEmployee(entity.getEmployeeId());
         } catch (ApiException e) {
-            throw new EntityNotFoundException("Employee not found");
+            throw new EntityNotFoundException("Employee not found", e);
         }
         timesheetEntry.setEmployeeId(entity.getEmployeeId());
         timesheetEntry.setCustomerId(entity.getCustomerId());
