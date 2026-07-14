@@ -14,7 +14,7 @@ import org.zero_consult.timesheet_backend.services.TimesheetEntryService;
 import java.time.LocalDate;
 import java.util.List;
 
-@CrossOrigin(origins = {"http://localhost:5174", "http://localhost:5101"})
+@CrossOrigin(origins = {"http://localhost:5174", "http://localhost:5101", "http://timesheet.localhost"})
 @RestController
 public class TimesheetController implements TimesheetsApi {
     private final TimesheetEntryService timesheetEntryService;
