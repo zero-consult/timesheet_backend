@@ -4,6 +4,7 @@ import org.springframework.stereotype.Controller;
 import org.zero_consult.idl.client.ApiException;
 import org.zero_consult.idl.client.api.CustomerApi;
 import org.zero_consult.idl.client.api.EmployeeApi;
+import org.zero_consult.timesheet_backend.configuration.CustomerProperties;
 import org.zero_consult.timesheet_backend.entities.TimesheetEntry;
 import org.zero_consult.timesheet_backend.entities.TimesheetStatus;
 import org.zero_consult.timesheet_backend.exceptions.EntityNotFoundException;
@@ -15,10 +16,12 @@ import java.util.Optional;
 
 @Controller
 public class TimesheetEntryService {
+    private final CustomerProperties customerProperties;
     private final TimesheetEntryRepository timesheetEntryRepository;
 
-    public TimesheetEntryService(TimesheetEntryRepository timesheetEntryRepository) {
+    public TimesheetEntryService(TimesheetEntryRepository timesheetEntryRepository, CustomerProperties customerProperties) {
         this.timesheetEntryRepository = timesheetEntryRepository;
+        this.customerProperties = customerProperties;
     }
 
     public List<TimesheetEntry> getAllTimesheetEntrys() {
@@ -29,12 +32,14 @@ public class TimesheetEntryService {
         entity.setCreatedAt(java.time.LocalDateTime.now());
         entity.setStatus(TimesheetStatus.IN_PROGRESS);
         CustomerApi customerApi = new CustomerApi();
+        customerApi.setCustomBaseUrl(customerProperties.getPeopleBackendHost());
         try {
             customerApi.getCustomer(entity.getCustomerId());
         } catch (ApiException e) {
             throw new EntityNotFoundException("Customer not found");
         }
         EmployeeApi employeeApi = new EmployeeApi();
+        employeeApi.setCustomBaseUrl(customerProperties.getPeopleBackendHost());
         try {
             employeeApi.getEmployee(entity.getEmployeeId());
         } catch (ApiException e) {
@@ -54,23 +59,13 @@ public class TimesheetEntryService {
         timesheetEntry.setEndTime(entity.getEndTime());
         switch (timesheetEntry.getStatus()) {
             case ACCEPTED:
-                if (entity.getStatus().equals(TimesheetStatus.REJECTED)) {
-                    throw new InvalidTimesheetEntryStatusUpdateException("TimesheetEntry status cannot be updated to REJECTED");
-                }
-                if (entity.getStatus().equals(TimesheetStatus.IN_PROGRESS)) {
-                    throw new InvalidTimesheetEntryStatusUpdateException("TimesheetEntry status cannot be updated to IN_PROGRESS");
-                }
-                break;
+                throw new InvalidTimesheetEntryStatusUpdateException("TimesheetEntry in status ACCEPTED cannot be updated");
             case REJECTED:
-                if (entity.getStatus().equals(TimesheetStatus.ACCEPTED)) {
-                    throw new InvalidTimesheetEntryStatusUpdateException("TimesheetEntry status cannot be updated to REJECTED");
-                }
-                if (entity.getStatus().equals(TimesheetStatus.IN_PROGRESS)) {
-                    throw new InvalidTimesheetEntryStatusUpdateException("TimesheetEntry status cannot be updated to IN_PROGRESS");
-                }
+                timesheetEntry.setStatus(TimesheetStatus.IN_PROGRESS);
                 break;
+            case IN_PROGRESS:
+                timesheetEntry.setStatus(entity.getStatus());
         }
-        timesheetEntry.setStatus(entity.getStatus());
         timesheetEntry.setEmployeeId(entity.getEmployeeId());
         timesheetEntry.setCustomerId(entity.getCustomerId());
         timesheetEntry.setDescription(entity.getDescription());
