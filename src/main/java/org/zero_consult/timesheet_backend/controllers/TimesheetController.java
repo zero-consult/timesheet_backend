@@ -11,6 +11,7 @@ import org.zero_consult.timesheet_backend.exceptions.InvalidTimesheetEntryStatus
 import org.zero_consult.timesheet_backend.mappers.TimesheetEntryMapper;
 import org.zero_consult.timesheet_backend.services.TimesheetEntryService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @CrossOrigin(origins = {"http://localhost:5174", "http://localhost:5101"})
@@ -32,10 +33,10 @@ public class TimesheetController implements TimesheetsApi {
     }
 
     @Override
-    public ResponseEntity<List<TimesheetEntry>> timesheetsList() {
+    public ResponseEntity<List<TimesheetEntry>> timesheetsList(LocalDate from, LocalDate until) {
         return ResponseEntity.ok(
                 timesheetEntryService
-                        .getAllTimesheetEntrys()
+                        .getAllTimesheetEntries(from, until)
                         .stream()
                         .map(TimesheetEntryMapper::toIdl)
                         .toList());
@@ -59,5 +60,17 @@ public class TimesheetController implements TimesheetsApi {
         } catch (InvalidTimesheetEntryStatusUpdateException e) {
             throw new RuntimeException(e); // TODO
         }
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteTimesheetEntry(String id) {
+        try {
+            timesheetEntryService.deleteTimesheetEntry(id);
+        } catch (EntityNotFoundException e) {
+            throw new RuntimeException(e); // TODO
+        } catch (InvalidTimesheetEntryStatusUpdateException e) {
+            throw new RuntimeException(e); // TODO
+        }
+        return ResponseEntity.noContent().build();
     }
 }
