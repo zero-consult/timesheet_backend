@@ -114,7 +114,7 @@ public class TimesheetEntryService {
             try {
                 UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
                 updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(!timesheetEntriesForEmployee.isEmpty());
-                employeeApi.updateEmployeeHasTimesheetEntries(entity.getCustomerId(), updateCustomerHasTimesheetEntriesRequest);
+                employeeApi.updateEmployeeHasTimesheetEntries(entity.getEmployeeId(), updateCustomerHasTimesheetEntriesRequest);
             } catch (ApiException e) {
                 throw new EntityNotFoundException("Employee not found", e);
             }
