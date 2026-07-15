@@ -1,6 +1,12 @@
 pipeline {
     agent none
     stages {
+        stage('pull tags') {
+            agent any
+            steps {
+                sh "git fetch --tags"
+            }
+        }
 		stage('Tag version') {
 		    agent any
 			when {
