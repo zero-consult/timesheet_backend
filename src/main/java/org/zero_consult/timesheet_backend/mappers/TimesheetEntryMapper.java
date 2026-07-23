@@ -2,6 +2,8 @@ package org.zero_consult.timesheet_backend.mappers;
 
 import org.zero_consult.idl.model.TimesheetEntry;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -32,6 +34,7 @@ public class TimesheetEntryMapper {
         mappedTimesheetEntry.setEndTime(LocalTime.parse(timesheetEntry.getEndTime(), DateTimeFormatter.ofPattern("HH:mm")));
         timesheetEntry.getDescription().ifPresent(mappedTimesheetEntry::setDescription);
         timesheetEntry.getStatus().ifPresent((status) -> mappedTimesheetEntry.setStatus(TimesheetStatusMapper.toEntity(status)));
+        timesheetEntry.getCreatedAt().ifPresent((createdAt) ->mappedTimesheetEntry.setCreatedAt(LocalDateTime.ofInstant(Instant.ofEpochMilli(createdAt), ZoneId.systemDefault())));
         return mappedTimesheetEntry;
     }
 }

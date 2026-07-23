@@ -3,10 +3,7 @@ package org.zero_consult.timesheet_backend.services;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.zero_consult.idl.client.ApiException;
-import org.zero_consult.idl.client.api.CustomerApi;
-import org.zero_consult.idl.client.api.EmployeeApi;
 import org.zero_consult.idl.client.model.UpdateCustomerHasTimesheetEntriesRequest;
-import org.zero_consult.timesheet_backend.configuration.CustomerProperties;
 import org.zero_consult.timesheet_backend.entities.TimesheetEntry;
 import org.zero_consult.timesheet_backend.entities.TimesheetStatus;
 import org.zero_consult.timesheet_backend.exceptions.EntityNotFoundException;
@@ -20,12 +17,14 @@ import java.util.Optional;
 @Controller
 @Transactional
 public class TimesheetEntryService {
-    private final CustomerProperties customerProperties;
     private final TimesheetEntryRepository timesheetEntryRepository;
+    private final CustomerApiService customerApiService;
+    private final EmployeeApiService employeeApiService;
 
-    public TimesheetEntryService(TimesheetEntryRepository timesheetEntryRepository, CustomerProperties customerProperties) {
+    public TimesheetEntryService(TimesheetEntryRepository timesheetEntryRepository, CustomerApiService customerApiService, EmployeeApiService employeeApiService) {
         this.timesheetEntryRepository = timesheetEntryRepository;
-        this.customerProperties = customerProperties;
+        this.customerApiService = customerApiService;
+        this.employeeApiService = employeeApiService;
     }
 
     public List<TimesheetEntry> getAllTimesheetEntries(LocalDate from, LocalDate until) {
@@ -35,21 +34,17 @@ public class TimesheetEntryService {
     public TimesheetEntry addTimesheetEntry(TimesheetEntry entity) throws EntityNotFoundException {
         entity.setCreatedAt(java.time.LocalDateTime.now());
         entity.setStatus(TimesheetStatus.IN_PROGRESS);
-        CustomerApi customerApi = new CustomerApi();
-        customerApi.setCustomBaseUrl(customerProperties.getPeopleBackendHost());
         try {
             UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
             updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(true);
-            customerApi.updateCustomerHasTimesheetEntries(entity.getCustomerId(), updateCustomerHasTimesheetEntriesRequest);
+            customerApiService.getCustomerApi().updateCustomerHasTimesheetEntries(entity.getCustomerId(), updateCustomerHasTimesheetEntriesRequest);
         } catch (ApiException e) {
             throw new EntityNotFoundException("Customer not found", e);
         }
-        EmployeeApi employeeApi = new EmployeeApi();
-        employeeApi.setCustomBaseUrl(customerProperties.getPeopleBackendHost());
         try {
             UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
             updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(true);
-            employeeApi.updateEmployeeHasTimesheetEntries(entity.getEmployeeId(), updateCustomerHasTimesheetEntriesRequest);
+            employeeApiService.getEmployeeApi().updateEmployeeHasTimesheetEntries(entity.getEmployeeId(), updateCustomerHasTimesheetEntriesRequest);
         } catch (ApiException e) {
             throw new EntityNotFoundException("Employee not found", e);
         }
@@ -74,23 +69,19 @@ public class TimesheetEntryService {
             case IN_PROGRESS:
                 timesheetEntry.setStatus(entity.getStatus());
         }
-        CustomerApi customerApi = new CustomerApi();
-        customerApi.setCustomBaseUrl(customerProperties.getPeopleBackendHost());
         String originalCustomerId = timesheetEntry.getCustomerId();
         try {
             UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
             updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(true);
-            customerApi.updateCustomerHasTimesheetEntries(entity.getCustomerId(), updateCustomerHasTimesheetEntriesRequest);
+            customerApiService.getCustomerApi().updateCustomerHasTimesheetEntries(entity.getCustomerId(), updateCustomerHasTimesheetEntriesRequest);
         } catch (ApiException e) {
             throw new EntityNotFoundException("Customer not found", e);
         }
-        EmployeeApi employeeApi = new EmployeeApi();
-        employeeApi.setCustomBaseUrl(customerProperties.getPeopleBackendHost());
         String originalEmployeeId = timesheetEntry.getEmployeeId();
         try {
             UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
             updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(true);
-            employeeApi.updateEmployeeHasTimesheetEntries(entity.getEmployeeId(), updateCustomerHasTimesheetEntriesRequest);
+            employeeApiService.getEmployeeApi().updateEmployeeHasTimesheetEntries(entity.getEmployeeId(), updateCustomerHasTimesheetEntriesRequest);
         } catch (ApiException e) {
             throw new EntityNotFoundException("Employee not found", e);
         }
@@ -99,22 +90,22 @@ public class TimesheetEntryService {
         timesheetEntry.setDescription(entity.getDescription());
         // don't update createdAt
         TimesheetEntry savedTimesheetEntry = timesheetEntryRepository.save(timesheetEntry);
-        if(!originalCustomerId.equals(entity.getCustomerId())) {
+        if (!originalCustomerId.equals(entity.getCustomerId())) {
             List<TimesheetEntry> timesheetEntriesForCustomer = timesheetEntryRepository.findByCustomerId(originalCustomerId);
             try {
                 UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
                 updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(!timesheetEntriesForCustomer.isEmpty());
-                customerApi.updateCustomerHasTimesheetEntries(entity.getCustomerId(), updateCustomerHasTimesheetEntriesRequest);
+                customerApiService.getCustomerApi().updateCustomerHasTimesheetEntries(entity.getCustomerId(), updateCustomerHasTimesheetEntriesRequest);
             } catch (ApiException e) {
                 throw new EntityNotFoundException("Customer not found", e);
             }
         }
-        if(!originalEmployeeId.equals(entity.getEmployeeId())) {
+        if (!originalEmployeeId.equals(entity.getEmployeeId())) {
             List<TimesheetEntry> timesheetEntriesForEmployee = timesheetEntryRepository.findByCustomerId(originalEmployeeId);
             try {
                 UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
                 updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(!timesheetEntriesForEmployee.isEmpty());
-                employeeApi.updateEmployeeHasTimesheetEntries(entity.getEmployeeId(), updateCustomerHasTimesheetEntriesRequest);
+                employeeApiService.getEmployeeApi().updateEmployeeHasTimesheetEntries(entity.getEmployeeId(), updateCustomerHasTimesheetEntriesRequest);
             } catch (ApiException e) {
                 throw new EntityNotFoundException("Employee not found", e);
             }
@@ -132,23 +123,19 @@ public class TimesheetEntryService {
             throw new InvalidTimesheetEntryStatusUpdateException("Timesheet entry may not be accepted to be deleted");
         }
         timesheetEntryRepository.deleteById(id);
-        CustomerApi customerApi = new CustomerApi();
-        customerApi.setCustomBaseUrl(customerProperties.getPeopleBackendHost());
         List<TimesheetEntry> timesheetEntriesForCustomer = timesheetEntryRepository.findByCustomerId(timesheetEntry.getCustomerId());
         try {
             UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
             updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(!timesheetEntriesForCustomer.isEmpty());
-            customerApi.updateCustomerHasTimesheetEntries(timesheetEntry.getCustomerId(), updateCustomerHasTimesheetEntriesRequest);
+            customerApiService.getCustomerApi().updateCustomerHasTimesheetEntries(timesheetEntry.getCustomerId(), updateCustomerHasTimesheetEntriesRequest);
         } catch (ApiException e) {
             throw new EntityNotFoundException("Customer not found", e);
         }
-        EmployeeApi employeeApi = new EmployeeApi();
-        employeeApi.setCustomBaseUrl(customerProperties.getPeopleBackendHost());
         List<TimesheetEntry> timesheetEntriesForEmployee = timesheetEntryRepository.findByCustomerId(timesheetEntry.getEmployeeId());
         try {
             UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
             updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(!timesheetEntriesForEmployee.isEmpty());
-            employeeApi.updateEmployeeHasTimesheetEntries(timesheetEntry.getEmployeeId(), updateCustomerHasTimesheetEntriesRequest);
+            employeeApiService.getEmployeeApi().updateEmployeeHasTimesheetEntries(timesheetEntry.getEmployeeId(), updateCustomerHasTimesheetEntriesRequest);
         } catch (ApiException e) {
             throw new EntityNotFoundException("Employee not found", e);
         }
