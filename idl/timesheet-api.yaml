@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Zero consult timesheet - OpenAPI 3.2
   description: ''
@@ -23,6 +23,11 @@ paths:
           schema:
             type: string
             format: date
+        - in: query
+          name: employeeId
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: A list of timesheet entries
@@ -57,7 +62,7 @@ paths:
               schema:
                 type: string
         '406':
-          description: 'Invalid timesheet entry status update'
+          description: 'Invoicing Month already closed'
           content:
             text/plain:
               schema:
@@ -170,15 +175,24 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/TimesheetStatus'
+        type:
+          $ref: '#/components/schemas/TimesheetType'
       required:
         - date
         - startTime
         - endTime
         - employeeId
-        - customerId
+        - status
+        - type
     TimesheetStatus:
       type: string
       enum:
         - In progress
         - Approved
         - Rejected
+    TimesheetType:
+      type: string
+      enum:
+        - Work
+        - Holiday
+        - Sickness

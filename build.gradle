@@ -46,9 +46,20 @@ tasks.named('test') {
 
 def buildDir = getLayout().getBuildDirectory().getAsFile().get();
 
-def generateEmployeeClientApi = tasks.register('generateEmployeeClientApi', GenerateTask) {
+def generatePeoplesClientApi = tasks.register('generatePeoplesClientApi', GenerateTask) {
     generatorName.set("java")
     inputSpec.set(new File("$rootDir/idl/people-api.yaml"))
+    outputDir.set(new File("$buildDir/generated"))
+    apiPackage.set("org.zero_consult.idl.client.api")
+    modelPackage.set("org.zero_consult.idl.client.model")
+    configOptions.set([
+            "useJakartaEe": "true"
+    ])
+}
+
+def generateInvoicesClientApi = tasks.register('generateInvoicesClientApi', GenerateTask) {
+    generatorName.set("java")
+    inputSpec.set(new File("$rootDir/idl/invoices-api.yaml"))
     outputDir.set(new File("$buildDir/generated"))
     apiPackage.set("org.zero_consult.idl.client.api")
     modelPackage.set("org.zero_consult.idl.client.model")
@@ -85,5 +96,6 @@ sourceSets {
 }
 
 
-compileJava.dependsOn generateEmployeeClientApi
+compileJava.dependsOn generateInvoicesClientApi
+compileJava.dependsOn generatePeoplesClientApi
 compileJava.dependsOn generateTimesheetApi

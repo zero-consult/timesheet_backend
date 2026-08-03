@@ -7,14 +7,13 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 import org.zero_consult.idl.api.TimesheetsApi;
 import org.zero_consult.idl.model.TimesheetEntry;
-import org.zero_consult.timesheet_backend.exceptions.EntityNotFoundException;
-import org.zero_consult.timesheet_backend.exceptions.InvalidTimesheetEntryStatusUpdateException;
-import org.zero_consult.timesheet_backend.exceptions.RestControllerException;
+import org.zero_consult.timesheet_backend.exceptions.*;
 import org.zero_consult.timesheet_backend.mappers.TimesheetEntryMapper;
 import org.zero_consult.timesheet_backend.services.TimesheetEntryService;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @CrossOrigin(origins = {
         "http://localhost:5174",
@@ -35,14 +34,18 @@ public class TimesheetController implements TimesheetsApi {
             return ResponseEntity.status(HttpStatus.CREATED).body(TimesheetEntryMapper.toIdl(timesheetEntryService.addTimesheetEntry(TimesheetEntryMapper.toEntity(timesheetEntry))));
         } catch (EntityNotFoundException e) {
             throw new RestControllerException(HttpStatusCode.valueOf(404), e.getMessage());
+        } catch (MonthAlreadyClosedException e) {
+            throw new RestControllerException(HttpStatusCode.valueOf(406), e.getMessage());
+        } catch (ServiceUnavailableException e) {
+            throw new RestControllerException(HttpStatusCode.valueOf(500), e.getMessage());
         }
     }
 
     @Override
-    public ResponseEntity<List<TimesheetEntry>> timesheetsList(LocalDate from, LocalDate until) {
+    public ResponseEntity<List<TimesheetEntry>> timesheetsList(LocalDate from, LocalDate until, Optional<String> employeeId) {
         return ResponseEntity.ok(
                 timesheetEntryService
-                        .getAllTimesheetEntries(from, until)
+                        .getAllTimesheetEntries(from, until, employeeId)
                         .stream()
                         .map(TimesheetEntryMapper::toIdl)
                         .toList());
@@ -63,8 +66,10 @@ public class TimesheetController implements TimesheetsApi {
             return ResponseEntity.ok(TimesheetEntryMapper.toIdl(timesheetEntryService.updateTimesheetEntry(id, TimesheetEntryMapper.toEntity(timesheetEntry))));
         } catch (EntityNotFoundException e) {
             throw new RestControllerException(HttpStatusCode.valueOf(404), e.getMessage());
-        } catch (InvalidTimesheetEntryStatusUpdateException e) {
+        } catch (InvalidTimesheetEntryStatusUpdateException | MonthAlreadyClosedException e) {
             throw new RestControllerException(HttpStatusCode.valueOf(406), e.getMessage());
+        } catch (ServiceUnavailableException e) {
+            throw new RestControllerException(HttpStatusCode.valueOf(500), e.getMessage());
         }
     }
 

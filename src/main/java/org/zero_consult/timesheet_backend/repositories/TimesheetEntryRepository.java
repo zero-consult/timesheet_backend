@@ -9,6 +9,8 @@ import java.util.List;
 public interface TimesheetEntryRepository extends JpaRepository<TimesheetEntry, String> {
     public List<TimesheetEntry> findByDateBetween(LocalDate from, LocalDate until);
 
+    public List<TimesheetEntry> findByDateBetweenAndEmployeeId(LocalDate from, LocalDate until, String employeeId);
+
     public List<TimesheetEntry> findByCustomerId(String customerId);
 
     public List<TimesheetEntry> findByEmployeeId(String employeeId);

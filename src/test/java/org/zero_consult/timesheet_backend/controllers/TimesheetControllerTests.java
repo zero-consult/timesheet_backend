@@ -17,11 +17,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.zero_consult.timesheet_backend.TimesheetBackendApplication;
 import org.zero_consult.timesheet_backend.entities.TimesheetEntry;
 import org.zero_consult.timesheet_backend.entities.TimesheetStatus;
+import org.zero_consult.timesheet_backend.entities.TimesheetType;
 import org.zero_consult.timesheet_backend.repositories.TimesheetEntryRepository;
-import org.zero_consult.timesheet_backend.services.CustomerApiMock;
-import org.zero_consult.timesheet_backend.services.CustomerApiService;
-import org.zero_consult.timesheet_backend.services.EmployeeApiMock;
-import org.zero_consult.timesheet_backend.services.EmployeeApiService;
+import org.zero_consult.timesheet_backend.services.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +36,10 @@ public class TimesheetControllerTests {
     private CustomerApiService customerApiService;
     @MockitoBean
     private EmployeeApiService employeeApiService;
+    @MockitoBean
+    private InvoicingMonthApiService invoicingMonthApiService;
+    @MockitoBean
+    private PayslipApiService payslipApiService;
 
     public TimesheetControllerTests(@Autowired MockMvc mvc, @Autowired TimesheetEntryRepository timesheetEntryRepository) {
         this.mvc = mvc;
@@ -60,6 +62,8 @@ public class TimesheetControllerTests {
         initData();
         Mockito.when(customerApiService.getCustomerApi()).thenReturn(new CustomerApiMock());
         Mockito.when(employeeApiService.getEmployeeApi()).thenReturn(new EmployeeApiMock());
+        Mockito.when(invoicingMonthApiService.getInvoicingMonthApi()).thenReturn(new InvoicingMonthApiMock());
+        Mockito.when(payslipApiService.getPayslipApi()).thenReturn(new PayslipApiMock());
         mvc.perform(MockMvcRequestBuilders.post("/timesheets")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(FileUtils.readFileToString(new File(getClass().getClassLoader().getResource("json_input/AddTImesheetEntry.json").getFile()), "UTF-8")))
@@ -80,6 +84,8 @@ public class TimesheetControllerTests {
         TimesheetEntry data = initData();
         Mockito.when(customerApiService.getCustomerApi()).thenReturn(new CustomerApiMock());
         Mockito.when(employeeApiService.getEmployeeApi()).thenReturn(new EmployeeApiMock());
+        Mockito.when(invoicingMonthApiService.getInvoicingMonthApi()).thenReturn(new InvoicingMonthApiMock());
+        Mockito.when(payslipApiService.getPayslipApi()).thenReturn(new PayslipApiMock());
         mvc.perform(MockMvcRequestBuilders.put("/timesheets/" + data.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(FileUtils.readFileToString(new File(getClass().getClassLoader().getResource("json_input/UpdateTimesheetEntry.json").getFile()), "UTF-8")))
@@ -91,6 +97,8 @@ public class TimesheetControllerTests {
         TimesheetEntry data = initData(TimesheetStatus.APPROVED);
         Mockito.when(customerApiService.getCustomerApi()).thenReturn(new CustomerApiMock());
         Mockito.when(employeeApiService.getEmployeeApi()).thenReturn(new EmployeeApiMock());
+        Mockito.when(invoicingMonthApiService.getInvoicingMonthApi()).thenReturn(new InvoicingMonthApiMock());
+        Mockito.when(payslipApiService.getPayslipApi()).thenReturn(new PayslipApiMock());
         mvc.perform(MockMvcRequestBuilders.put("/timesheets/" + data.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(FileUtils.readFileToString(new File(getClass().getClassLoader().getResource("json_input/UpdateTimesheetEntry.json").getFile()), "UTF-8")))
@@ -102,6 +110,8 @@ public class TimesheetControllerTests {
         TimesheetEntry data = initData();
         Mockito.when(customerApiService.getCustomerApi()).thenReturn(new CustomerApiMock());
         Mockito.when(employeeApiService.getEmployeeApi()).thenReturn(new EmployeeApiMock());
+        Mockito.when(invoicingMonthApiService.getInvoicingMonthApi()).thenReturn(new InvoicingMonthApiMock());
+        Mockito.when(payslipApiService.getPayslipApi()).thenReturn(new PayslipApiMock());
         mvc.perform(MockMvcRequestBuilders.delete("/timesheets/" + data.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().is2xxSuccessful());
@@ -112,6 +122,8 @@ public class TimesheetControllerTests {
         TimesheetEntry data = initData();
         Mockito.when(customerApiService.getCustomerApi()).thenReturn(new CustomerApiMock());
         Mockito.when(employeeApiService.getEmployeeApi()).thenReturn(new EmployeeApiMock());
+        Mockito.when(invoicingMonthApiService.getInvoicingMonthApi()).thenReturn(new InvoicingMonthApiMock());
+        Mockito.when(payslipApiService.getPayslipApi()).thenReturn(new PayslipApiMock());
         mvc.perform(MockMvcRequestBuilders.delete("/timesheets/1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().is4xxClientError());
@@ -124,6 +136,7 @@ public class TimesheetControllerTests {
     private TimesheetEntry initData(TimesheetStatus status) {
         TimesheetEntry entity = new TimesheetEntry();
         entity.setCustomerId("1");
+        entity.setType(TimesheetType.WORK);
         entity.setEmployeeId("2");
         entity.setDate(java.time.LocalDate.of(2026, 7, 20));
         entity.setStartTime(java.time.LocalTime.of(10, 0));

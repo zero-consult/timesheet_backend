@@ -26,6 +26,9 @@ public class TimesheetEntry {
     @Enumerated(EnumType.STRING)
     private TimesheetStatus status;
 
+    @Enumerated(EnumType.STRING)
+    private TimesheetType type;
+
     public String getId() {
         return id;
     }
@@ -96,5 +99,13 @@ public class TimesheetEntry {
 
     public void setStatus(TimesheetStatus status) {
         this.status = status;
+    }
+
+    public TimesheetType getType() {
+        return type;
+    }
+
+    public void setType(TimesheetType type) {
+        this.type = type;
     }
 }

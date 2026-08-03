@@ -3,6 +3,7 @@ package org.zero_consult.timesheet_backend.mappers;
 import org.junit.jupiter.api.Test;
 import org.zero_consult.idl.model.TimesheetEntry;
 import org.zero_consult.idl.model.TimesheetStatus;
+import org.zero_consult.idl.model.TimesheetType;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -15,14 +16,15 @@ public class TimesheetEntryMapperTests {
     public void testToEntity() {
         TimesheetEntry idlTimesheetEntry = new TimesheetEntry();
         idlTimesheetEntry.setId(Optional.of("1"));
-        idlTimesheetEntry.setCustomerId("2");
+        idlTimesheetEntry.setCustomerId(Optional.of("2"));
         idlTimesheetEntry.setEmployeeId("3");
         idlTimesheetEntry.setDate(LocalDate.of(2026, 7, 20));
         idlTimesheetEntry.setStartTime("10:00");
         idlTimesheetEntry.setEndTime("11:00");
         idlTimesheetEntry.setDescription(Optional.of("description"));
         idlTimesheetEntry.setCreatedAt(Optional.of(123456789L));
-        idlTimesheetEntry.setStatus(Optional.of(TimesheetStatus.APPROVED));
+        idlTimesheetEntry.setStatus(TimesheetStatus.APPROVED);
+        idlTimesheetEntry.setType(TimesheetType.WORK);
         org.zero_consult.timesheet_backend.entities.TimesheetEntry entityTimesheetEntry = TimesheetEntryMapper.toEntity(idlTimesheetEntry);
         assertEquals("1", entityTimesheetEntry.getId());
         assertEquals("2", entityTimesheetEntry.getCustomerId());
@@ -33,6 +35,7 @@ public class TimesheetEntryMapperTests {
         assertEquals("description", entityTimesheetEntry.getDescription());
         assertEquals(LocalDateTime.ofInstant(Instant.ofEpochMilli(123456789L), ZoneId.systemDefault()), entityTimesheetEntry.getCreatedAt());
         assertEquals(org.zero_consult.timesheet_backend.entities.TimesheetStatus.APPROVED, entityTimesheetEntry.getStatus());
+        assertEquals(org.zero_consult.timesheet_backend.entities.TimesheetType.WORK, entityTimesheetEntry.getType());
     }
 
     @Test
@@ -47,15 +50,17 @@ public class TimesheetEntryMapperTests {
         entityTimesheetEntry.setDescription("description");
         entityTimesheetEntry.setCreatedAt(LocalDateTime.ofInstant(Instant.ofEpochMilli(123456789L), ZoneId.systemDefault()));
         entityTimesheetEntry.setStatus(org.zero_consult.timesheet_backend.entities.TimesheetStatus.APPROVED);
+        entityTimesheetEntry.setType(org.zero_consult.timesheet_backend.entities.TimesheetType.WORK);
         TimesheetEntry idlTimesheetEntry = TimesheetEntryMapper.toIdl(entityTimesheetEntry);
         assertEquals(Optional.of("1"), idlTimesheetEntry.getId());
-        assertEquals("2", idlTimesheetEntry.getCustomerId());
+        assertEquals(Optional.of("2"), idlTimesheetEntry.getCustomerId());
         assertEquals("3", idlTimesheetEntry.getEmployeeId());
         assertEquals(LocalDate.of(2026, 7, 20), idlTimesheetEntry.getDate());
         assertEquals("10:00", idlTimesheetEntry.getStartTime());
         assertEquals("11:00", idlTimesheetEntry.getEndTime());
         assertEquals(Optional.of("description"), idlTimesheetEntry.getDescription());
         assertEquals(Optional.of(123456789L), idlTimesheetEntry.getCreatedAt());
-        assertEquals(Optional.of(TimesheetStatus.APPROVED), idlTimesheetEntry.getStatus());
+        assertEquals(TimesheetStatus.APPROVED, idlTimesheetEntry.getStatus());
+        assertEquals(TimesheetType.WORK, idlTimesheetEntry.getType());
     }
 }

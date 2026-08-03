@@ -3,14 +3,19 @@ package org.zero_consult.timesheet_backend.services;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.zero_consult.idl.client.ApiException;
+import org.zero_consult.idl.client.model.Payslip;
 import org.zero_consult.idl.client.model.UpdateCustomerHasTimesheetEntriesRequest;
 import org.zero_consult.timesheet_backend.entities.TimesheetEntry;
 import org.zero_consult.timesheet_backend.entities.TimesheetStatus;
+import org.zero_consult.timesheet_backend.entities.TimesheetType;
 import org.zero_consult.timesheet_backend.exceptions.EntityNotFoundException;
 import org.zero_consult.timesheet_backend.exceptions.InvalidTimesheetEntryStatusUpdateException;
+import org.zero_consult.timesheet_backend.exceptions.MonthAlreadyClosedException;
+import org.zero_consult.timesheet_backend.exceptions.ServiceUnavailableException;
 import org.zero_consult.timesheet_backend.repositories.TimesheetEntryRepository;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,26 +25,53 @@ public class TimesheetEntryService {
     private final TimesheetEntryRepository timesheetEntryRepository;
     private final CustomerApiService customerApiService;
     private final EmployeeApiService employeeApiService;
+    private final InvoicingMonthApiService invoicingMonthApiService;
+    private final PayslipApiService payslipApiService;
 
-    public TimesheetEntryService(TimesheetEntryRepository timesheetEntryRepository, CustomerApiService customerApiService, EmployeeApiService employeeApiService) {
+    public TimesheetEntryService(TimesheetEntryRepository timesheetEntryRepository, CustomerApiService customerApiService, EmployeeApiService employeeApiService, InvoicingMonthApiService invoicingMonthApiService, PayslipApiService payslipApiService) {
         this.timesheetEntryRepository = timesheetEntryRepository;
         this.customerApiService = customerApiService;
         this.employeeApiService = employeeApiService;
+        this.invoicingMonthApiService = invoicingMonthApiService;
+        this.payslipApiService = payslipApiService;
     }
 
-    public List<TimesheetEntry> getAllTimesheetEntries(LocalDate from, LocalDate until) {
-        return timesheetEntryRepository.findByDateBetween(from, until);
+    public List<TimesheetEntry> getAllTimesheetEntries(LocalDate from, LocalDate until, Optional<String> employeeId) {
+        if(employeeId.isEmpty()) {
+            return timesheetEntryRepository.findByDateBetween(from, until);
+        } else {
+            return timesheetEntryRepository.findByDateBetweenAndEmployeeId(from, until, employeeId.get());
+        }
     }
 
-    public TimesheetEntry addTimesheetEntry(TimesheetEntry entity) throws EntityNotFoundException {
+    public TimesheetEntry addTimesheetEntry(TimesheetEntry entity) throws EntityNotFoundException, ServiceUnavailableException, MonthAlreadyClosedException {
         entity.setCreatedAt(java.time.LocalDateTime.now());
         entity.setStatus(TimesheetStatus.IN_PROGRESS);
         try {
-            UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
-            updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(true);
-            customerApiService.getCustomerApi().updateCustomerHasTimesheetEntries(entity.getCustomerId(), updateCustomerHasTimesheetEntriesRequest);
+            String currentPayslipMonthRaw = invoicingMonthApiService.getInvoicingMonthApi().getCurrentPayslipMonth();
+            LocalDate currentPayslipMonth = LocalDate.parse(currentPayslipMonthRaw, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            if(currentPayslipMonth.isAfter(entity.getDate())) {
+                throw new MonthAlreadyClosedException("payslip month already closed");
+            }
         } catch (ApiException e) {
-            throw new EntityNotFoundException("Customer not found", e);
+            throw new ServiceUnavailableException("Invoicing service has unexpected error", e);
+        }
+        try {
+            List<Payslip> payslips = payslipApiService.getPayslipApi().payslipsList(entity.getDate().withDayOfMonth(1), entity.getDate().withDayOfMonth(1).plusMonths(1), entity.getEmployeeId());
+            if(!payslips.isEmpty()) {
+                throw new MonthAlreadyClosedException("payslip for this employee and month already exists");
+            }
+        } catch (ApiException e) {
+            throw new ServiceUnavailableException("Payslip service has unexpected error", e);
+        }
+        if(entity.getType().equals(TimesheetType.WORK)) {
+            try {
+                UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
+                updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(true);
+                customerApiService.getCustomerApi().updateCustomerHasTimesheetEntries(entity.getCustomerId(), updateCustomerHasTimesheetEntriesRequest);
+            } catch (ApiException e) {
+                throw new EntityNotFoundException("Customer not found", e);
+            }
         }
         try {
             UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
@@ -48,14 +80,36 @@ public class TimesheetEntryService {
         } catch (ApiException e) {
             throw new EntityNotFoundException("Employee not found", e);
         }
+        if(!entity.getType().equals(TimesheetType.WORK)) {
+            entity.setCustomerId(null);
+        }
         return timesheetEntryRepository.save(entity);
     }
 
-    public TimesheetEntry updateTimesheetEntry(String id, TimesheetEntry entity) throws EntityNotFoundException, InvalidTimesheetEntryStatusUpdateException {
+    public TimesheetEntry updateTimesheetEntry(String id, TimesheetEntry entity) throws EntityNotFoundException, InvalidTimesheetEntryStatusUpdateException, ServiceUnavailableException, MonthAlreadyClosedException {
         Optional<TimesheetEntry> timesheetEntryById = timesheetEntryRepository.findById(id);
         if (timesheetEntryById.isEmpty()) {
             throw new EntityNotFoundException("TimesheetEntry not found");
         }
+
+        try {
+            String currentPayslipMonthRaw = invoicingMonthApiService.getInvoicingMonthApi().getCurrentPayslipMonth();
+            LocalDate currentPayslipMonth = LocalDate.parse(currentPayslipMonthRaw, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            if(currentPayslipMonth.isAfter(entity.getDate())) {
+                throw new MonthAlreadyClosedException("payslip month already closed");
+            }
+        } catch (ApiException e) {
+            throw new ServiceUnavailableException("Invoicing service has unexpected error", e);
+        }
+        try {
+            List<Payslip> payslips = payslipApiService.getPayslipApi().payslipsList(entity.getDate().withDayOfMonth(1), entity.getDate().withDayOfMonth(1).plusMonths(1), entity.getEmployeeId());
+            if(!payslips.isEmpty()) {
+                throw new MonthAlreadyClosedException("payslip for this employee and month already exists");
+            }
+        } catch (ApiException e) {
+            throw new ServiceUnavailableException("Payslip service has unexpected error", e);
+        }
+
         TimesheetEntry timesheetEntry = timesheetEntryById.get();
         timesheetEntry.setDate(entity.getDate());
         timesheetEntry.setStartTime(entity.getStartTime());
@@ -122,14 +176,15 @@ public class TimesheetEntryService {
         if (timesheetEntry.getStatus() == TimesheetStatus.APPROVED) {
             throw new InvalidTimesheetEntryStatusUpdateException("Timesheet entry may not be accepted to be deleted");
         }
-        timesheetEntryRepository.deleteById(id);
         List<TimesheetEntry> timesheetEntriesForCustomer = timesheetEntryRepository.findByCustomerId(timesheetEntry.getCustomerId());
-        try {
-            UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
-            updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(!timesheetEntriesForCustomer.isEmpty());
-            customerApiService.getCustomerApi().updateCustomerHasTimesheetEntries(timesheetEntry.getCustomerId(), updateCustomerHasTimesheetEntriesRequest);
-        } catch (ApiException e) {
-            throw new EntityNotFoundException("Customer not found", e);
+        if(timesheetEntry.getType().equals(TimesheetType.WORK)) {
+            try {
+                UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
+                updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(!timesheetEntriesForCustomer.isEmpty());
+                customerApiService.getCustomerApi().updateCustomerHasTimesheetEntries(timesheetEntry.getCustomerId(), updateCustomerHasTimesheetEntriesRequest);
+            } catch (ApiException e) {
+                throw new EntityNotFoundException("Customer not found", e);
+            }
         }
         List<TimesheetEntry> timesheetEntriesForEmployee = timesheetEntryRepository.findByCustomerId(timesheetEntry.getEmployeeId());
         try {
@@ -139,5 +194,6 @@ public class TimesheetEntryService {
         } catch (ApiException e) {
             throw new EntityNotFoundException("Employee not found", e);
         }
+        timesheetEntryRepository.deleteById(id);
     }
 }

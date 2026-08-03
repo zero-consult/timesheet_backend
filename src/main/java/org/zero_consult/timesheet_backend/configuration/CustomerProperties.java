@@ -6,7 +6,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "zero-consult")
 public class CustomerProperties {
+    private String invoicesBackendHost;
     private String peopleBackendHost;
+
+    public String getInvoicesBackendHost() {
+        return invoicesBackendHost;
+    }
+
+    public void setInvoicesBackendHost(String invoicesBackendHost) {
+        this.invoicesBackendHost = invoicesBackendHost;
+    }
 
     public String getPeopleBackendHost() {
         return peopleBackendHost;
