@@ -11,6 +11,8 @@ public interface TimesheetEntryRepository extends JpaRepository<TimesheetEntry, 
 
     public List<TimesheetEntry> findByDateBetweenAndEmployeeId(LocalDate from, LocalDate until, String employeeId);
 
+    public List<TimesheetEntry> findByDateBetweenAndCustomerId(LocalDate from, LocalDate until, String customerId);
+
     public List<TimesheetEntry> findByCustomerId(String customerId);
 
     public List<TimesheetEntry> findByEmployeeId(String employeeId);

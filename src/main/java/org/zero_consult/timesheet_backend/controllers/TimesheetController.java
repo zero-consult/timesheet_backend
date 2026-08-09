@@ -17,9 +17,11 @@ import java.util.Optional;
 
 @CrossOrigin(origins = {
         "http://localhost:5174",
+        "http://localhost:5175",
+        "http://invoices.localhost",
+        "http://invoices.dev.localhost",
         "http://timesheet.localhost",
         "http://timesheet.dev.localhost",
-        "http://timesheet.tst.localhost"
 })@RestController
 public class TimesheetController implements TimesheetsApi {
     private final TimesheetEntryService timesheetEntryService;
@@ -33,19 +35,19 @@ public class TimesheetController implements TimesheetsApi {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(TimesheetEntryMapper.toIdl(timesheetEntryService.addTimesheetEntry(TimesheetEntryMapper.toEntity(timesheetEntry))));
         } catch (EntityNotFoundException e) {
-            throw new RestControllerException(HttpStatusCode.valueOf(404), e.getMessage());
+            throw new RestControllerException(HttpStatusCode.valueOf(404), e.getMessage(), e);
         } catch (MonthAlreadyClosedException e) {
-            throw new RestControllerException(HttpStatusCode.valueOf(406), e.getMessage());
+            throw new RestControllerException(HttpStatusCode.valueOf(406), e.getMessage(), e);
         } catch (ServiceUnavailableException e) {
-            throw new RestControllerException(HttpStatusCode.valueOf(500), e.getMessage());
+            throw new RestControllerException(HttpStatusCode.valueOf(500), e.getMessage(), e);
         }
     }
 
     @Override
-    public ResponseEntity<List<TimesheetEntry>> timesheetsList(LocalDate from, LocalDate until, Optional<String> employeeId) {
+    public ResponseEntity<List<TimesheetEntry>> timesheetsList(LocalDate from, LocalDate until, Optional<String> employeeId, Optional<String> customerId) {
         return ResponseEntity.ok(
                 timesheetEntryService
-                        .getAllTimesheetEntries(from, until, employeeId)
+                        .getAllTimesheetEntries(from, until, employeeId, customerId)
                         .stream()
                         .map(TimesheetEntryMapper::toIdl)
                         .toList());
@@ -56,7 +58,7 @@ public class TimesheetController implements TimesheetsApi {
         try {
             return ResponseEntity.ok(TimesheetEntryMapper.toIdl(timesheetEntryService.getTimesheetEntry(id)));
         } catch (EntityNotFoundException e) {
-            throw new RestControllerException(HttpStatusCode.valueOf(404), e.getMessage());
+            throw new RestControllerException(HttpStatusCode.valueOf(404), e.getMessage(), e);
         }
     }
 
@@ -65,11 +67,11 @@ public class TimesheetController implements TimesheetsApi {
         try {
             return ResponseEntity.ok(TimesheetEntryMapper.toIdl(timesheetEntryService.updateTimesheetEntry(id, TimesheetEntryMapper.toEntity(timesheetEntry))));
         } catch (EntityNotFoundException e) {
-            throw new RestControllerException(HttpStatusCode.valueOf(404), e.getMessage());
+            throw new RestControllerException(HttpStatusCode.valueOf(404), e.getMessage(), e);
         } catch (InvalidTimesheetEntryStatusUpdateException | MonthAlreadyClosedException e) {
-            throw new RestControllerException(HttpStatusCode.valueOf(406), e.getMessage());
+            throw new RestControllerException(HttpStatusCode.valueOf(406), e.getMessage(), e);
         } catch (ServiceUnavailableException e) {
-            throw new RestControllerException(HttpStatusCode.valueOf(500), e.getMessage());
+            throw new RestControllerException(HttpStatusCode.valueOf(500), e.getMessage(), e);
         }
     }
 
@@ -78,9 +80,9 @@ public class TimesheetController implements TimesheetsApi {
         try {
             timesheetEntryService.deleteTimesheetEntry(id);
         } catch (EntityNotFoundException e) {
-            throw new RestControllerException(HttpStatusCode.valueOf(404), e.getMessage());
+            throw new RestControllerException(HttpStatusCode.valueOf(404), e.getMessage(), e);
         } catch (InvalidTimesheetEntryStatusUpdateException e) {
-            throw new RestControllerException(HttpStatusCode.valueOf(406), e.getMessage());
+            throw new RestControllerException(HttpStatusCode.valueOf(406), e.getMessage(), e);
         }
         return ResponseEntity.noContent().build();
     }

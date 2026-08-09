@@ -36,9 +36,13 @@ public class TimesheetEntryService {
         this.payslipApiService = payslipApiService;
     }
 
-    public List<TimesheetEntry> getAllTimesheetEntries(LocalDate from, LocalDate until, Optional<String> employeeId) {
+    public List<TimesheetEntry> getAllTimesheetEntries(LocalDate from, LocalDate until, Optional<String> employeeId, Optional<String> customerId) {
         if(employeeId.isEmpty()) {
-            return timesheetEntryRepository.findByDateBetween(from, until);
+            if(customerId.isEmpty()) {
+                return timesheetEntryRepository.findByDateBetween(from, until);
+            } else {
+                return timesheetEntryRepository.findByDateBetweenAndCustomerId(from, until, customerId.get());
+            }
         } else {
             return timesheetEntryRepository.findByDateBetweenAndEmployeeId(from, until, employeeId.get());
         }
@@ -176,8 +180,9 @@ public class TimesheetEntryService {
         if (timesheetEntry.getStatus() == TimesheetStatus.APPROVED) {
             throw new InvalidTimesheetEntryStatusUpdateException("Timesheet entry may not be accepted to be deleted");
         }
-        List<TimesheetEntry> timesheetEntriesForCustomer = timesheetEntryRepository.findByCustomerId(timesheetEntry.getCustomerId());
+        timesheetEntryRepository.deleteById(id);
         if(timesheetEntry.getType().equals(TimesheetType.WORK)) {
+            List<TimesheetEntry> timesheetEntriesForCustomer = timesheetEntryRepository.findByCustomerId(timesheetEntry.getCustomerId());
             try {
                 UpdateCustomerHasTimesheetEntriesRequest updateCustomerHasTimesheetEntriesRequest = new UpdateCustomerHasTimesheetEntriesRequest();
                 updateCustomerHasTimesheetEntriesRequest.setHasTimesheetEntries(!timesheetEntriesForCustomer.isEmpty());
@@ -194,6 +199,5 @@ public class TimesheetEntryService {
         } catch (ApiException e) {
             throw new EntityNotFoundException("Employee not found", e);
         }
-        timesheetEntryRepository.deleteById(id);
     }
 }
