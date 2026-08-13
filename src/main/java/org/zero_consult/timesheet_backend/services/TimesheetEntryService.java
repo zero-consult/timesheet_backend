@@ -1,5 +1,9 @@
 package org.zero_consult.timesheet_backend.services;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.zero_consult.idl.client.ApiException;
@@ -16,6 +20,7 @@ import org.zero_consult.timesheet_backend.repositories.TimesheetEntryRepository;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,6 +54,16 @@ public class TimesheetEntryService {
     }
 
     public TimesheetEntry addTimesheetEntry(TimesheetEntry entity) throws EntityNotFoundException, ServiceUnavailableException, MonthAlreadyClosedException {
+/**
+  TODO
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+        boolean isAdmin = authorities.stream().anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin) {
+            String username = ((User) authentication.getPrincipal()).getUsername();
+        }
+ */
+
         entity.setCreatedAt(java.time.LocalDateTime.now());
         entity.setStatus(TimesheetStatus.IN_PROGRESS);
         try {

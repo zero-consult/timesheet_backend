@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "zero-consult")
 public class CustomProperties {
     private String invoicesBackendHost;
+    private String jwtSecretKey;
     private String peopleBackendHost;
 
     public String getInvoicesBackendHost() {
@@ -15,6 +16,14 @@ public class CustomProperties {
 
     public void setInvoicesBackendHost(String invoicesBackendHost) {
         this.invoicesBackendHost = invoicesBackendHost;
+    }
+
+    public String getJwtSecretKey() {
+        return jwtSecretKey;
+    }
+
+    public void setJwtSecretKey(String jwtSecretKey) {
+        this.jwtSecretKey = jwtSecretKey;
     }
 
     public String getPeopleBackendHost() {

@@ -3,6 +3,12 @@ package org.zero_consult.timesheet_backend.controllers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 import org.zero_consult.idl.api.TimesheetsApi;
@@ -12,10 +18,12 @@ import org.zero_consult.timesheet_backend.mappers.TimesheetEntryMapper;
 import org.zero_consult.timesheet_backend.services.TimesheetEntryService;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 @CrossOrigin(origins = {
+        "http://localhost",
         "http://localhost:5174",
         "http://localhost:5175",
         "http://invoices.localhost",
@@ -31,6 +39,7 @@ public class TimesheetController implements TimesheetsApi {
     }
 
     @Override
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<TimesheetEntry> addTimesheetEntry(TimesheetEntry timesheetEntry) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(TimesheetEntryMapper.toIdl(timesheetEntryService.addTimesheetEntry(TimesheetEntryMapper.toEntity(timesheetEntry))));
@@ -44,6 +53,7 @@ public class TimesheetController implements TimesheetsApi {
     }
 
     @Override
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<List<TimesheetEntry>> timesheetsList(LocalDate from, LocalDate until, Optional<String> employeeId, Optional<String> customerId) {
         return ResponseEntity.ok(
                 timesheetEntryService
@@ -54,6 +64,7 @@ public class TimesheetController implements TimesheetsApi {
     }
 
     @Override
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<TimesheetEntry> getTimesheetEntry(String id) {
         try {
             return ResponseEntity.ok(TimesheetEntryMapper.toIdl(timesheetEntryService.getTimesheetEntry(id)));
@@ -63,6 +74,7 @@ public class TimesheetController implements TimesheetsApi {
     }
 
     @Override
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<TimesheetEntry> updateTimesheetEntry(String id, TimesheetEntry timesheetEntry) {
         try {
             return ResponseEntity.ok(TimesheetEntryMapper.toIdl(timesheetEntryService.updateTimesheetEntry(id, TimesheetEntryMapper.toEntity(timesheetEntry))));
@@ -76,6 +88,7 @@ public class TimesheetController implements TimesheetsApi {
     }
 
     @Override
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<Void> deleteTimesheetEntry(String id) {
         try {
             timesheetEntryService.deleteTimesheetEntry(id);
